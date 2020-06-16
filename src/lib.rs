@@ -25,8 +25,6 @@ impl<V: Copy + PartialEq + PartialOrd + Debug> Edge<V> {
     pub fn contains_index(&self, index: usize) -> bool{
         self.indices.0 == index || self.indices.1 == index
     }
-
-
 }
 
 impl<V:  Copy + PartialEq + PartialOrd + Debug> PartialEq for Edge<V>{
@@ -44,6 +42,7 @@ impl<V:  Copy + PartialEq + PartialOrd + Debug> PartialOrd for Edge<V>{
 }
 
 impl<V: Copy + PartialEq + PartialOrd + Debug> Ord for Edge<V> {
+    //TODO: Needs to be cleaned up
     fn cmp(&self, other: &Self) -> Ordering {
         if self.distance < other.distance{
             return Ordering::Less;
@@ -123,11 +122,11 @@ pub struct SOCluster<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + De
 }
 
 impl<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debug, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster<T,V,D,M>{
-    pub fn new_rnd_k(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
+    pub fn new_untrained(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
         socluster_setup(k, data, distance, mean)
     }
 
-    pub fn new(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
+    pub fn new_trained(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
         let mut soc = socluster_setup(k, data, distance, mean);
         soc.train_all(data);
         soc
@@ -163,6 +162,7 @@ impl<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debug, D: Fn(&T, &
         if self.centroids.len() > self.k && !self.edges.is_empty(){
             let edge = self.edges.pop_first().unwrap();
             let (e1, e2) = edge.indices;
+            assert_ne!(e1, e2);
             let max = max(e1, e2);
             let min = min(e1, e2);
             let (n1, n2) = (self.centroids.remove(max), self.centroids.remove(min));
@@ -173,7 +173,6 @@ impl<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debug, D: Fn(&T, &
 
             self.edges = self.edges.iter().map(|edge| shift_edge(edge, max)).collect();
         }
-
     }
 
     pub fn insert(&mut self, index: usize, val: &T){
@@ -217,24 +216,18 @@ fn shift_edge<V: Copy + PartialEq + PartialOrd + Debug>(edge: &Edge<V>, max: usi
 }
 
 
-
+//TODO: This function needs to be cleaned up
 fn socluster_setup<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debug, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>
 (k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M> {
-    //pick random k nodes
     let mut nodes: Vec<T> = Vec::new();
     let mut vertices: BTreeSet<Edge<V>> = BTreeSet::new();
-    let mut rng = thread_rng();
-    let range = Uniform::new(0, data.len());
     let mut taken: HashSet<usize> = HashSet::new();
     let mut count = 0;
     for i in 0..k{
-        //gets a new index
         let mut index = count;
         taken.insert(index);
         count += 1;
-        //grabs the image
         let img = data[index].clone();
-        //for each value in nodes find distance and add new vertex
         if !nodes.is_empty() {
             for (ni, v) in nodes.iter().enumerate(){
                 let dist = distance(&img, v);
@@ -298,7 +291,7 @@ mod tests {
     fn test_soc_insert(){
         let data = vec![2.0, 3.0, 4.0, 10.0, 11.0, 12.0, 24.0, 25.0, 26.0, 35.0, 40.0, 45.0];
         let clust = 4;
-        let mut soc = SOCluster::new_rnd_k(clust, &data, manhattan, mean);
+        let mut soc = SOCluster::new_untrained(clust, &data, manhattan, mean);
         let val1 = 7.0;
         println!("soc1: {:?}, len: {}, clust: {}", soc.centroids, soc.centroids.len(), clust);
         print!("Edges: [");
@@ -359,11 +352,11 @@ mod tests {
         println!("Standard Test: ");
         let data = vec![2.0, 3.0, 4.0, 10.0, 11.0, 12.0, 24.0, 25.0, 26.0, 35.0, 40.0, 45.0];
         let clust = 4;
-        let mut soc = SOCluster::new_rnd_k(clust, &data, manhattan, mean);
+        let mut soc = SOCluster::new_untrained(clust, &data, manhattan, mean);
         println!("centroids: {:?}", soc.centroids);
         soc.train_all(&data);
         println!("centroids after train: {:?}", soc.centroids);
-        let soc2 = SOCluster::new(clust, &data, manhattan, mean);
+        let soc2 = SOCluster::new_trained(clust, &data, manhattan, mean);
         println!("centroids 2 with train: {:?}", soc2.centroids);
     }
 
@@ -377,7 +370,7 @@ mod tests {
         let num_target_means = candidate_target_means[0].len();
         let data = vec![2, 3, 4, 10, 11, 12, 24, 25, 26, 35, 40, 45];
         let mut socluster =
-            SOCluster::new(num_target_means, &data, manhattan_32, mean_32);
+            SOCluster::new_trained(num_target_means, &data, manhattan_32, mean_32);
         let mut sorted_means = socluster.copy_clusters();
         sorted_means.sort();
         let unsorted_means = socluster.copy_clusters();
