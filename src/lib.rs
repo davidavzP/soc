@@ -10,13 +10,13 @@ use std::fmt::Debug;
 
 
 #[derive(Copy, Clone)]
-pub struct Edge<V: Copy + PartialEq + PartialOrd + Debug> {
+pub struct Edge<V: Copy + PartialEq + PartialOrd> {
     distance: V,
     indices: (usize, usize),
     weight: V
 }
 
-impl<V: Copy + PartialEq + PartialOrd + Debug> Edge<V> {
+impl<V: Copy + PartialEq + PartialOrd> Edge<V> {
     pub fn new(distance: V, indices: (usize, usize), weight: V) -> Self {
         let indices = if indices.0 < indices.1 {indices}else {(indices.1, indices.0)};
         Edge {distance, indices, weight}
@@ -27,21 +27,21 @@ impl<V: Copy + PartialEq + PartialOrd + Debug> Edge<V> {
     }
 }
 
-impl<V:  Copy + PartialEq + PartialOrd + Debug> PartialEq for Edge<V>{
+impl<V:  Copy + PartialEq + PartialOrd> PartialEq for Edge<V>{
     fn eq(&self, other: &Self) -> bool {
         self.cmp(&other) == Ordering::Equal
     }
 }
 
-impl<V:  Copy + PartialEq + PartialOrd + Debug> Eq for Edge<V>{}
+impl<V:  Copy + PartialEq + PartialOrd> Eq for Edge<V>{}
 
-impl<V:  Copy + PartialEq + PartialOrd + Debug> PartialOrd for Edge<V>{
+impl<V:  Copy + PartialEq + PartialOrd> PartialOrd for Edge<V>{
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(&other))
     }
 }
 
-impl<V: Copy + PartialEq + PartialOrd + Debug> Ord for Edge<V> {
+impl<V: Copy + PartialEq + PartialOrd > Ord for Edge<V> {
     //TODO: Needs to be cleaned up
     fn cmp(&self, other: &Self) -> Ordering {
         if self.distance < other.distance{
@@ -113,7 +113,7 @@ merged(n1, n2) -> [MEAN]
 */
 
 
-pub struct SOCluster<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debug, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>{
+pub struct SOCluster<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>{
     centroids: Vec<T>,
     edges: BTreeSet<Edge<V>>,
     k: usize,
@@ -121,7 +121,7 @@ pub struct SOCluster<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + De
     mean: M
 }
 
-impl<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debug, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster<T,V,D,M>{
+impl<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster<T,V,D,M>{
     pub fn new_untrained(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
         socluster_setup(k, data, distance, mean)
     }
@@ -199,7 +199,7 @@ impl<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debug, D: Fn(&T, &
 
 }
 
-fn shift_edge<V: Copy + PartialEq + PartialOrd + Debug>(edge: &Edge<V>, max: usize) -> Edge<V>{
+fn shift_edge<V: Copy + PartialEq + PartialOrd>(edge: &Edge<V>, max: usize) -> Edge<V>{
     let (e1, e2) = edge.indices;
     let mut new_indices = (e1,e2);
     if e1 > max {
@@ -217,7 +217,7 @@ fn shift_edge<V: Copy + PartialEq + PartialOrd + Debug>(edge: &Edge<V>, max: usi
 
 
 //TODO: This function needs to be cleaned up
-fn socluster_setup<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debug, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>
+fn socluster_setup<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>
 (k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M> {
     let mut nodes: Vec<T> = Vec::new();
     let mut vertices: BTreeSet<Edge<V>> = BTreeSet::new();
@@ -247,7 +247,7 @@ fn socluster_setup<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debu
 
 }
 
-fn classify<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Debug, D: Fn(&T,&T) -> V>(target: &T, means: &Vec<T>, distance: &D) -> usize {
+fn classify<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V>(target: &T, means: &Vec<T>, distance: &D) -> usize {
     let distances: Vec<(V,usize)> = (0..means.len())
         .map(|i| (distance(&target, &means[i]).into(), i))
         .collect();
