@@ -3,12 +3,12 @@
 #![feature(option_unwrap_none)]
 #![feature(associated_type_defaults)]
 
-mod partialcmp;
-mod means;
+pub mod means;
 use std::collections::*;
 use std::cmp::{Ordering, min, max};
-use crate::partialcmp::PartialCmp;
-use crate::means::Means;
+use crate::means::traits::*;
+
+
 
 #[derive(Copy, Clone)]
 pub struct Edge<V> where V: PartialCmp{
