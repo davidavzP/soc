@@ -2,6 +2,7 @@
 #![feature(btree_drain_filter)]
 #![feature(option_unwrap_none)]
 #![feature(associated_type_defaults)]
+#![feature(trait_alias)]
 
 pub mod means;
 use std::collections::*;
@@ -17,9 +18,8 @@ pub struct Edge<V> where V: PartialCmp{
     weight: V
 }
 
-impl<V: PartialCmp> PartialCmp for Edge<V> {}
 
- impl<V: PartialCmp> Edge<V>{
+impl<V: PartialCmp> Edge<V>{
     pub fn new(distance: V, indices: (usize, usize), weight: V) -> Self {
         let indices = if indices.0 < indices.1 {indices}else {(indices.1, indices.0)};
         Edge {distance, indices, weight}
@@ -81,41 +81,7 @@ impl<V: PartialCmp> Ord for Edge<V> {
     }
 }
 
-
-/*
-
-setup(max-nodes)
-    edges = new red-black-tree
-    nodes = array of inputs
-
-lookup(input)
-    for each node
-        find distance from input to node
-    return (node-index, distance) of closest node
-
-train(input)
-    insert(input)
-    if number of nodes exceeds max-nodes
-        edge = edges.remove(smallest edge)
-        (n1, n2) = endpoints of edge
-        Remove n1 and n2 and their edges
-        insert(merged(n1,n2))
-
-insert(image)
-    add image to nodes
-    for each existing node n
-        Create and insert a new edge:
-            - First vertex is image
-            - Second vertex is n
-            - Weight = distance from image to n
-
-merged(n1, n2) -> [MEAN]
-    img = (n1.image + n2.image) / 2
-    return img
-
-*/
-
-
+#[allow(dead_code)]
 pub struct SOCluster<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>{
     centroids: Vec<T>,
     edges: BTreeSet<Edge<V>>,
@@ -180,7 +146,7 @@ impl<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster
             let (n1, n2) = (self.centroids.remove(max), self.centroids.remove(min));
 
             self.edges.drain_filter(|v| v.contains_index(e1) || v.contains_index(e2));
-            
+
             self.insert(min, &n1.calc_mean(&n2));
 
             self.edges = self.edges.iter().map(|edge| shift_edge(edge, max)).collect();
@@ -394,3 +360,4 @@ mod tests {
             .map(|v| v[i])
     }
 }
+
