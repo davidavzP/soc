@@ -147,7 +147,9 @@ impl<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster
 
             self.edges.drain_filter(|v| v.contains_index(e1) || v.contains_index(e2));
 
-            self.insert(min, &n1.calc_mean(&n2));
+            //self.insert(min, &n1.calc_mean(&n2));
+            let mean = Means::calc_means(&vec![n1, n2]);
+            self.insert(min, &mean);
 
             self.edges = self.edges.iter().map(|edge| shift_edge(edge, max)).collect();
         }

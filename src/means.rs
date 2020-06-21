@@ -10,7 +10,7 @@ pub mod traits {
             (self + other) / 2.0
         }
 
-        fn calc_means(vals: &Vec<Self>) -> Self {
+        fn calc_means(vals: &Vec<f64>) -> Self {
             let mut sums = 0.0;
             for v in vals{
                 sums += v.clone();
