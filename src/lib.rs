@@ -8,7 +8,9 @@ pub mod means;
 use std::collections::*;
 use std::cmp::{Ordering, min, max};
 use crate::means::traits::*;
-
+use rand::thread_rng;
+use rand::distributions::{Distribution, Uniform, WeightedIndex};
+use std::path::Iter;
 
 
 #[derive(Copy, Clone)]
@@ -82,7 +84,7 @@ impl<V: PartialCmp> Ord for Edge<V> {
 }
 
 #[allow(dead_code)]
-pub struct SOCluster<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>{
+pub struct SOCluster<T: Means , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>{
     centroids: Vec<T>,
     edges: BTreeSet<Edge<V>>,
     k: usize,
@@ -90,7 +92,7 @@ pub struct SOCluster<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>)
     mean: M
 }
 
-impl<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster<T,V,D,M>{
+impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster<T,V,D,M>{
     pub fn new(centroids: Vec<T>, edges: BTreeSet<Edge<V>>, k: usize, distance: D, mean: M) -> SOCluster<T,V,D,M>{
         SOCluster{
             centroids,
@@ -107,6 +109,13 @@ impl<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster
 
     pub fn new_trained(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
         let mut soc = socluster_setup(k, data, distance, mean);
+        soc.train_all(data);
+        soc
+    }
+
+    pub fn new_trained_plus(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
+        let centroids = initial_plus_plus(k, &distance, data);
+        let mut soc = socluster_setup(k, &centroids, distance, mean);
         soc.train_all(data);
         soc
     }
@@ -160,7 +169,7 @@ impl<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster
         for (i, v) in self.centroids.iter().enumerate(){
             if i != index {
                 let dist = (self.distance)(val, v);
-                self.edges.insert(Edge::new(dist, (index, i), dist));
+                self.edges.insert(Edge::new(dist, (index, i), dist.clone()));
             }
         }
     }
@@ -172,7 +181,7 @@ impl<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster
         for (i, v) in self.centroids.iter().enumerate(){
             if i != last {
                 let dist = (self.distance)(val, v);
-                self.edges.insert(Edge::new(dist, (last, i), dist));
+                self.edges.insert(Edge::new(dist, (last, i), dist.clone()));
             }
         }
     }
@@ -195,7 +204,8 @@ fn shift_edge<V: PartialCmp>(edge: &Edge<V>, max: usize) -> Edge<V>{
     }
 }
 
-fn socluster_setup<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>
+
+fn socluster_setup<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>
 (k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M> {
     let mut nodes: Vec<T> = Vec::new();
     let mut vertices: BTreeSet<Edge<V>> = BTreeSet::new();
@@ -204,7 +214,7 @@ fn socluster_setup<T: Means, V: PartialCmp, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
         if !nodes.is_empty() {
             for (ni, v) in nodes.iter().enumerate(){
                 let dist = distance(&img, v);
-                let node = Edge::new(dist, (i, ni),  dist);
+                let node = Edge::new(dist, (i, ni),  dist.clone());
                 vertices.insert(node);
             }
         }
@@ -224,10 +234,26 @@ fn classify<T: Means, V: PartialCmp, D: Fn(&T,&T) -> V>(target: &T, means: &Vec<
             Some(if m.0 < d.0 {m} else {d}))).unwrap().1
 }
 
+fn initial_plus_plus<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V>(k: usize, distance: &D, data: &[T]) -> Vec<T> {
+    let mut result = Vec::new();
+    let mut rng = thread_rng();
+    let range = Uniform::new(0, data.len());
+    result.push(data[range.sample(&mut rng)].clone());
+    while result.len() < k {
+        let squared_distances: Vec<f64> = data.iter()
+            .map(|datum| 1.0f64 + distance(datum, result.last().unwrap()).into())
+            .map(|dist| dist.powf(2.0))
+            .collect();
+        let dist = WeightedIndex::new(&squared_distances).unwrap();
+        result.push(data[dist.sample(&mut rng)].clone());
+    }
+    result
+}
+
 
 #[cfg(test)]
 mod tests {
-    use crate::{SOCluster, shift_edge};
+    use crate::{SOCluster, shift_edge, initial_plus_plus};
     use std::cmp::{max, min};
 
     fn manhattan_32(n1: &i32, n2: &i32) -> i32 {
@@ -338,7 +364,7 @@ mod tests {
         let num_target_means = candidate_target_means[0].len();
         let data = vec![2, 3, 4, 10, 11, 12, 24, 25, 26, 35, 40, 45];
         let socluster =
-            SOCluster::new_trained(num_target_means, &data, manhattan_32, mean_32);
+            SOCluster::new_trained_plus(num_target_means, &data, manhattan_32, mean_32);
         let mut sorted_means = socluster.copy_clusters();
         sorted_means.sort();
         let unsorted_means = socluster.copy_clusters();
