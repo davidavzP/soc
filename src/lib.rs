@@ -177,14 +177,13 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
             //self.insert(min, &n1.calc_mean(&n2));
             //let mean = Means::calc_means(&vec![n1, n2]);
             let mut mean: T;
-            if c1 == 0 || c2 == 0 {
-                mean = Means::calc_means(&vec![n1, n2]);
-            }else {
-                let sum = c1 as f64 + c2 as f64;
-                let a1 = c1 as f64 / sum;
-                let a2 = c2 as f64 / sum;
-                mean = Means::calc_weighted(&n1, a1, a2, &n2);
-            }
+            assert!(c1 > 0 || c2 > 0);
+            let sum = c1 as f64 + c2 as f64;
+            let a1 = c1 as f64 / sum;
+            let a2 = c2 as f64 / sum;
+            assert!(!a1.is_nan() || a1 > 0.0);
+            assert!(!a2.is_nan() || a2 > 0.0);
+            mean = Means::calc_weighted(&n1, a1, a2, &n2);
 
             //TODO: TRANSFER COUNTS
             self.insert(min, &mean, c1 + c2);
