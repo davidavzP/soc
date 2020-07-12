@@ -2,6 +2,7 @@ pub mod traits {
     pub trait Means: Clone + PartialEq {
         fn calc_mean(&self, other: &Self) -> Self;
         fn calc_means(vals: &Vec<Self>) -> Self;
+        fn calc_weighted(&self, w1: f64, w2: f64, other: &Self) -> Self;
 
     }
 
@@ -17,6 +18,10 @@ pub mod traits {
             }
             sums / (vals.len() as f64)
         }
+
+        fn calc_weighted(&self, w1: f64, w2: f64, other: &Self) -> Self {
+            w1 * *self + w2 * *other
+        }
     }
 
     impl Means for i32{
@@ -30,6 +35,16 @@ pub mod traits {
                 sums += v.clone();
             }
             sums / (vals.len() as i32)
+        }
+
+        fn calc_weighted(&self, w1: f64, w2: f64, other: &Self) -> Self {
+            let mean = w1 as i32 * self.clone() + w2 as i32 * other.clone();
+            if mean == 0 {
+                self.calc_mean(other)
+            }else {
+                mean
+            }
+
         }
     }
 
