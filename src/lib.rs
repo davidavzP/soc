@@ -172,6 +172,8 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
             let (n1, n2) = (self.centroids.remove(max), self.centroids.remove(min));
             //TODO: GET COUNTS
             let (c1, c2) = (self.counts.remove(max) as f64, self.counts.remove(min) as f64);
+            assert_ne!(c1, 0.0);
+            assert_ne!(c2, 0.0);
 
             self.edges.drain_filter(|v| v.contains_index(e1) || v.contains_index(e2));
             self.edges = self.edges.iter().map(|edge | shift_edge(edge, max)).collect();
@@ -287,6 +289,7 @@ fn initial_plus_plus<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + In
 mod tests {
     use crate::{SOCluster, shift_edge, initial_plus_plus};
     use std::cmp::{max, min};
+    use crate::means::traits::Means;
 
     fn manhattan_32(n1: &i32, n2: &i32) -> i32 {
         let mut diff = n1 - n2;
@@ -329,6 +332,7 @@ mod tests {
         println!();
         soc.insert_last(&val1);
         println!("soc1 after insert: {:?}, len: {}, clust: {}", soc.centroids, soc.centroids.len(), clust);
+        println!("soc counts after insert: {:?}", soc.counts);
 
         print!("Edges after insert: [");
         for v in &soc.edges{
@@ -343,7 +347,9 @@ mod tests {
         let max = max(e1, e2);
         let min = min(e1, e2);
         let (n1, n2) = (soc.centroids.remove(max), soc.centroids.remove(min));
+        let (c1, c2) = (soc.counts.remove(max) as f64, soc.counts.remove(min) as f64);
         println!("soc1 after remove: {:?}, len: {}, clust: {}", soc.centroids, soc.centroids.len(), clust);
+        println!("soc1 counts after remove: {:?}", soc.counts);
 
         soc.edges.drain_filter(|v| v.contains_index(e1) || v.contains_index(e2));
         print!("Edges after drain: [");
@@ -360,9 +366,13 @@ mod tests {
         }
         print!("]");
         println!();
+        let w1 = c1 / (c1 + c2);
+        let w2 = c1 / (c1 + c2);
 
+        let mean = Means::calc_weighted(&n1, w1, w2, &n2);
 
-        soc.insert(min, &(soc.mean)(&vec![n1, n2]), 0);
+        //soc.insert(min, &(soc.mean)(&vec![n1, n2]), 0);
+        soc.insert(min, &mean, (c1 + c2) as usize);
         print!("Edges after insert: [");
         for v in &soc.edges{
             print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
@@ -373,6 +383,7 @@ mod tests {
 
 
         println!("soc1 after shift: {:?}, len: {}, clust: {}", soc.centroids, soc.centroids.len(), clust);
+        println!("soc1 counts after shift: {:?}", soc.counts);
     }
 
 
@@ -393,6 +404,7 @@ mod tests {
         }
         print!("]");
         println!();
+        println!("soc counts: {:?}", soc2.counts);
     }
 
     #[test]
@@ -400,12 +412,12 @@ mod tests {
         println!("Dr. Ferrer's Test: ");
         //Adapted From "https://github.com/gjf2a/kmeans"
         let candidate_target_means =
-            vec![vec![3, 11, 25, 41], vec![2, 3, 11, 32], vec![7, 25, 35, 42],
+            vec![vec![3, 10, 25, 41], vec![2, 3, 10, 32], vec![7, 25, 35, 42],
                  vec![7, 25, 37, 45], vec![7, 25, 41, 41], vec![7, 24, 25, 41]];
         let num_target_means = candidate_target_means[0].len();
         let data = vec![2, 3, 4, 10, 11, 12, 24, 25, 26, 35, 40, 45];
         let socluster =
-            SOCluster::new_trained_plus(num_target_means, &data, manhattan_32, mean_32);
+            SOCluster::new_trained(num_target_means, &data, manhattan_32, mean_32);
         //
         // let socluster_plus =
         //     SOCluster::new_trained_plus(num_target_means, &data, manhattan_32, mean_32);
