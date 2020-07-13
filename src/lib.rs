@@ -50,9 +50,9 @@ impl<V: PartialCmp> PartialOrd for Edge<V> {
 impl<V: PartialCmp> Ord for Edge<V> {
     //TODO: Needs to be cleaned up
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.distance < other.distance{
+        if self.weight < other.weight{
             return Ordering::Less;
-        }else if self.distance > other.distance {
+        }else if self.weight > other.weight {
             return Ordering::Greater;
         }else if self.indices.0 < other.indices.0 {
             return Ordering::Less;
@@ -69,7 +69,7 @@ impl<V: PartialCmp> Ord for Edge<V> {
 
     fn max(self, other: Self) -> Self where
         Self: Sized, {
-        if self.distance < other.distance {
+        if self.weight < other.weight {
             return other;
         }
         return self;
@@ -77,7 +77,7 @@ impl<V: PartialCmp> Ord for Edge<V> {
 
     fn min(self, other: Self) -> Self where
         Self: Sized, {
-        if self.distance > other.distance {
+        if self.weight > other.weight {
             return other;
         }
         return self;
@@ -171,26 +171,33 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
             let min = min(e1, e2);
             let (n1, n2) = (self.centroids.remove(max), self.centroids.remove(min));
             //TODO: GET COUNTS
+            let (c1, c2) = (self.counts.remove(max) as f64, self.counts.remove(min) as f64);
 
             self.edges.drain_filter(|v| v.contains_index(e1) || v.contains_index(e2));
             self.edges = self.edges.iter().map(|edge | shift_edge(edge, max)).collect();
 
             //self.insert(min, &n1.calc_mean(&n2));
-            let mean = Means::calc_means(&vec![n1, n2]);
-            //TODO: TRANSFER COUNTS AND CALCULATE WEIGHTED MEAN
-            self.insert(min, &mean);
+            //let mean = Means::calc_means(&vec![n1, n2]);
 
+            let w1 = c1 / (c1 + c2);
+            let w2 = c1 / (c1 + c2);
+
+            let mean = Means::calc_weighted(&n1, w1, w2, &n2);
+            //TODO: TRANSFER COUNTS AND CALCULATE WEIGHTED MEAN
+            self.insert(min, &mean, (c1 + c2) as usize);
         }
     }
 
-    pub fn insert(&mut self, index: usize, val: &T){
+    pub fn insert(&mut self, index: usize, val: &T, count: usize){
         self.centroids.insert(index, val.clone());
         //TODO: insert correct count
+        self.counts.insert(index, count);
         for (i, v) in self.centroids.iter().enumerate(){
             if i != index {
                 let dist = (self.distance)(val, v);
                 //TODO: DIFFERENT DISTANCE CALCULATION
-                self.edges.insert(Edge::new(dist, (index, i), dist.into()));
+                let weight = dist.into() * max(self.counts[index], self.counts[i]) as f64;
+                self.edges.insert(Edge::new(dist, (index, i), weight));
             }
         }
     }
@@ -200,11 +207,13 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
         let last = self.centroids.len();
         self.centroids.push(val.clone());
         //TODO: PUSH ONE
+        self.counts.push(1);
         for (i, v) in self.centroids.iter().enumerate(){
             if i != last {
                 let dist = (self.distance)(val, v);
                 //TODO: DIFFERNET DISTANCE CALCULATION
-                self.edges.insert(Edge::new(dist, (last, i), dist.into()));
+                let weight = dist.into() * max(self.counts[last], self.counts[i]) as f64;
+                self.edges.insert(Edge::new(dist, (last, i), weight));
             }
         }
     }
@@ -353,7 +362,7 @@ mod tests {
         println!();
 
 
-        soc.insert(min, &(soc.mean)(&vec![n1, n2]));
+        soc.insert(min, &(soc.mean)(&vec![n1, n2]), 0);
         print!("Edges after insert: [");
         for v in &soc.edges{
             print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
@@ -376,8 +385,14 @@ mod tests {
         println!("centroids: {:?}", soc.centroids);
         soc.train_all(&data);
         println!("centroids after train: {:?}", soc.centroids);
-        let soc2 = SOCluster::new_trained(clust, &data, manhattan, mean);
+        let soc2 = SOCluster::new_trained_plus(clust, &data, manhattan, mean);
         println!("centroids 2 with train: {:?}", soc2.centroids);
+        print!("Edges: [");
+        for v in &soc2.edges{
+            print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
+        }
+        print!("]");
+        println!();
     }
 
     #[test]
@@ -385,12 +400,12 @@ mod tests {
         println!("Dr. Ferrer's Test: ");
         //Adapted From "https://github.com/gjf2a/kmeans"
         let candidate_target_means =
-            vec![vec![3, 11, 25, 40], vec![2, 3, 11, 32], vec![7, 25, 35, 42],
-                 vec![7, 25, 37, 45], vec![7, 25, 40, 40], vec![7, 24, 25, 40]];
+            vec![vec![3, 11, 25, 41], vec![2, 3, 11, 32], vec![7, 25, 35, 42],
+                 vec![7, 25, 37, 45], vec![7, 25, 41, 41], vec![7, 24, 25, 41]];
         let num_target_means = candidate_target_means[0].len();
         let data = vec![2, 3, 4, 10, 11, 12, 24, 25, 26, 35, 40, 45];
         let socluster =
-            SOCluster::new_trained(num_target_means, &data, manhattan_32, mean_32);
+            SOCluster::new_trained_plus(num_target_means, &data, manhattan_32, mean_32);
         //
         // let socluster_plus =
         //     SOCluster::new_trained_plus(num_target_means, &data, manhattan_32, mean_32);
