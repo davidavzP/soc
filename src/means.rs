@@ -20,7 +20,7 @@ pub mod traits {
         }
 
         fn calc_weighted(&self, w1: f64, w2: f64, other: &Self) -> Self {
-            w1 * *self + w2 * *other
+            (w1 * self.clone()) + (w2 * other.clone())
         }
     }
 
@@ -38,7 +38,7 @@ pub mod traits {
         }
 
         fn calc_weighted(&self, w1: f64, w2: f64, other: &Self) -> Self {
-            let mean = w1 as i32 * self.clone() + w2 as i32 * other.clone();
+            let mean = (w1 as i32 * self.clone()) + (w2 as i32 * other.clone());
             if mean == 0 {
                 self.calc_mean(other)
             }else {

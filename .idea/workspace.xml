@@ -7,6 +7,7 @@
     <list default="true" id="9ccc7b91-a572-4f2c-8e0c-a9ba88bc762e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/means.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/means.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,7 +30,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
   </component>
-  <component name="RunManager" selected="Cargo Command.Test tests::test_soc">
+  <component name="RunManager" selected="Cargo Command.Test tests::test_soc_insert">
     <configuration name="Test tests::f64_u8_test" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="channel" value="DEFAULT" />
       <option name="command" value="test --package soc --lib tests::f64_u8_test -- --exact" />
@@ -80,9 +81,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo Command.Test tests::test_soc_insert" />
         <item itemvalue="Cargo Command.Test tests::test_soc" />
         <item itemvalue="Cargo Command.Test tests::test_soc_print" />
-        <item itemvalue="Cargo Command.Test tests::test_soc_insert" />
         <item itemvalue="Cargo Command.Test tests::f64_u8_test" />
       </list>
     </recent_temporary>
@@ -109,21 +110,21 @@
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="765" y="256" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1080@0.0.1920.1080" timestamp="1594575080948" />
-    <state width="1877" height="299" key="GridCell.Tab.0.bottom" timestamp="1594604377114">
+    <state width="1877" height="299" key="GridCell.Tab.0.bottom" timestamp="1594762784696">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="299" key="GridCell.Tab.0.bottom/0.0.1920.1080@0.0.1920.1080" timestamp="1594604377114" />
-    <state width="1877" height="299" key="GridCell.Tab.0.center" timestamp="1594604377114">
+    <state width="1877" height="299" key="GridCell.Tab.0.bottom/0.0.1920.1080@0.0.1920.1080" timestamp="1594762784696" />
+    <state width="1877" height="299" key="GridCell.Tab.0.center" timestamp="1594762784696">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="299" key="GridCell.Tab.0.center/0.0.1920.1080@0.0.1920.1080" timestamp="1594604377114" />
-    <state width="1877" height="299" key="GridCell.Tab.0.left" timestamp="1594604377114">
+    <state width="1877" height="299" key="GridCell.Tab.0.center/0.0.1920.1080@0.0.1920.1080" timestamp="1594762784696" />
+    <state width="1877" height="299" key="GridCell.Tab.0.left" timestamp="1594762784696">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="299" key="GridCell.Tab.0.left/0.0.1920.1080@0.0.1920.1080" timestamp="1594604377114" />
-    <state width="1877" height="299" key="GridCell.Tab.0.right" timestamp="1594604377114">
+    <state width="1877" height="299" key="GridCell.Tab.0.left/0.0.1920.1080@0.0.1920.1080" timestamp="1594762784696" />
+    <state width="1877" height="299" key="GridCell.Tab.0.right" timestamp="1594762784696">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="299" key="GridCell.Tab.0.right/0.0.1920.1080@0.0.1920.1080" timestamp="1594604377114" />
+    <state width="1877" height="299" key="GridCell.Tab.0.right/0.0.1920.1080@0.0.1920.1080" timestamp="1594762784696" />
   </component>
 </project>

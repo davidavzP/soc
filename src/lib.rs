@@ -84,19 +84,6 @@ impl<V: PartialCmp> Ord for Edge<V> {
     }
 }
 
-fn f64_max(f1: f64, f2: f64) -> f64 {
-    if f1 < f2{
-        return f2;
-    }
-    return f1;
-}
-
-fn f64_min(f1: f64, f2: f64) -> f64 {
-    if f1 > f2{
-        return f2;
-    }
-    return f1;
-}
 
 #[allow(dead_code)]
 pub struct SOCluster<T: Means , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>{
@@ -172,21 +159,20 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
             let (n1, n2) = (self.centroids.remove(max), self.centroids.remove(min));
             //TODO: GET COUNTS
             let (c1, c2) = (self.counts.remove(max) as f64, self.counts.remove(min) as f64);
-            assert_ne!(c1, 0.0);
-            assert_ne!(c2, 0.0);
+            assert!(c1 > 0.0 && c2 > 0.0);
 
             self.edges.drain_filter(|v| v.contains_index(e1) || v.contains_index(e2));
             self.edges = self.edges.iter().map(|edge | shift_edge(edge, max)).collect();
 
             //self.insert(min, &n1.calc_mean(&n2));
             //let mean = Means::calc_means(&vec![n1, n2]);
-
-            let w1 = c1 / (c1 + c2);
-            let w2 = c1 / (c1 + c2);
-
-            let mean = Means::calc_weighted(&n1, w1, w2, &n2);
             //TODO: TRANSFER COUNTS AND CALCULATE WEIGHTED MEAN
-            self.insert(min, &mean, (c1 + c2) as usize);
+            let sum = c1 + c2;
+            let w1 = c1 / sum;
+            let w2 = c2 / sum;
+            let mean = Means::calc_weighted(&n1, w1, w2, &n2);
+
+            self.insert(min, &mean, sum as usize);
         }
     }
 
@@ -198,7 +184,8 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
             if i != index {
                 let dist = (self.distance)(val, v);
                 //TODO: DIFFERENT DISTANCE CALCULATION
-                let weight = dist.into() * max(self.counts[index], self.counts[i]) as f64;
+                let max = max(self.counts[index], self.counts[i]) as f64;
+                let weight = dist.into() * max;
                 self.edges.insert(Edge::new(dist, (index, i), weight));
             }
         }
@@ -214,7 +201,9 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
             if i != last {
                 let dist = (self.distance)(val, v);
                 //TODO: DIFFERNET DISTANCE CALCULATION
-                let weight = dist.into() * max(self.counts[last], self.counts[i]) as f64;
+                assert_eq!(1, self.counts[last]);
+                let max = max(self.counts[last], self.counts[i]) as f64;
+                let weight = dist.into() * max;
                 self.edges.insert(Edge::new(dist, (last, i), weight));
             }
         }
@@ -367,7 +356,7 @@ mod tests {
         print!("]");
         println!();
         let w1 = c1 / (c1 + c2);
-        let w2 = c1 / (c1 + c2);
+        let w2 = c2 / (c1 + c2);
 
         let mean = Means::calc_weighted(&n1, w1, w2, &n2);
 
@@ -412,24 +401,19 @@ mod tests {
         println!("Dr. Ferrer's Test: ");
         //Adapted From "https://github.com/gjf2a/kmeans"
         let candidate_target_means =
-            vec![vec![3, 10, 25, 41], vec![2, 3, 10, 32], vec![7, 25, 35, 42],
-                 vec![7, 25, 37, 45], vec![7, 25, 41, 41], vec![7, 24, 25, 41]];
+            vec![vec![3, 11, 25, 40], vec![2, 3, 11, 32], vec![7, 25, 35, 42],
+                 vec![7, 25, 37, 45], vec![7, 25, 40, 40], vec![7, 24, 25, 40]];
         let num_target_means = candidate_target_means[0].len();
         let data = vec![2, 3, 4, 10, 11, 12, 24, 25, 26, 35, 40, 45];
         let socluster =
             SOCluster::new_trained(num_target_means, &data, manhattan_32, mean_32);
-        //
-        // let socluster_plus =
-        //     SOCluster::new_trained_plus(num_target_means, &data, manhattan_32, mean_32);
-        //
-        // assert_ne!(socluster.copy_clusters(), socluster_plus.copy_clusters());
-
         let mut sorted_means = socluster.copy_clusters();
         sorted_means.sort();
         let unsorted_means = socluster.copy_clusters();
         assert_eq!(socluster.k, sorted_means.len());
         assert_eq!(sorted_means.len(), num_target_means);
         println!("sorted_means: {:?}", sorted_means);
+        println!("counts: {:?}", socluster.counts);
         println!("candidate_means: {:?}", candidate_target_means);
         for i in 0..sorted_means.len() {
             let target = find_best_match(i, sorted_means[i], &candidate_target_means).unwrap();
