@@ -96,7 +96,7 @@ pub struct SOCluster<T: Means , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>{
 }
 
 impl<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster<T,V,D>{
-    pub fn new(centroids: Vec<T>, edges: BTreeSet<Edge>, k: usize, distance: D, weighted: bool) -> SOCluster<T,V,D>{
+    fn new(centroids: Vec<T>, edges: BTreeSet<Edge>, k: usize, distance: D, weighted: bool) -> SOCluster<T,V,D>{
         SOCluster{
             centroids,
             counts: (0..k).map(|_| 1).collect(),
@@ -144,6 +144,10 @@ impl<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster<T,V,D>{
 
     pub fn copy_clusters(&self) -> Vec<T>{
         self.centroids.clone()
+    }
+
+    pub fn copy_counts(&self) -> Vec<usize>{
+        self.counts.clone()
     }
 
     pub fn train_all(&mut self, data: &[T]){
@@ -419,7 +423,7 @@ mod tests {
         let num_target_means = candidate_target_means[0].len();
         let data = vec![2, 3, 4, 10, 11, 12, 24, 25, 26, 35, 40, 45];
         let socluster =
-            SOCluster::new_trained_plus(num_target_means, &data, manhattan_32);
+            SOCluster::new_trained(num_target_means, &data, manhattan_32);
         let mut sorted_means = socluster.copy_clusters();
         sorted_means.sort();
         let unsorted_means = socluster.copy_clusters();
