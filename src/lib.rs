@@ -15,17 +15,17 @@ use std::borrow::BorrowMut;
 
 
 #[derive(Copy, Clone)]
-pub struct Edge<V> where V: PartialCmp{
-    distance: V,
-    indices: (usize, usize),
-    weight: f64
+pub struct Edge {
+    weight: f64,
+    indices: (usize, usize)
+
 }
 
 
-impl<V: PartialCmp> Edge<V>{
-    pub fn new(distance: V, indices: (usize, usize), weight: f64) -> Self {
+impl Edge{
+    pub fn new(weight: f64, indices: (usize, usize)) -> Self {
         let indices = if indices.0 < indices.1 {indices}else {(indices.1, indices.0)};
-        Edge {distance, indices, weight}
+        Edge {weight, indices}
     }
 
     pub fn contains_index(&self, index: usize) -> bool{
@@ -33,21 +33,21 @@ impl<V: PartialCmp> Edge<V>{
     }
 }
 
-impl<V: PartialCmp> PartialEq for Edge<V>{
+impl PartialEq for Edge{
     fn eq(&self, other: &Self) -> bool {
         self.cmp(&other) == Ordering::Equal
     }
 }
 
-impl<V: PartialCmp> Eq for Edge<V> {}
+impl Eq for Edge {}
 
-impl<V: PartialCmp> PartialOrd for Edge<V> {
+impl PartialOrd for Edge {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(&other))
     }
 }
 
-impl<V: PartialCmp> Ord for Edge<V> {
+impl Ord for Edge {
     //TODO: Needs to be cleaned up
     fn cmp(&self, other: &Self) -> Ordering {
         if self.weight < other.weight{
@@ -86,40 +86,46 @@ impl<V: PartialCmp> Ord for Edge<V> {
 
 
 #[allow(dead_code)]
-pub struct SOCluster<T: Means , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>{
+pub struct SOCluster<T: Means , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>{
     centroids: Vec<T>,
     counts: Vec<usize>,
-    edges: BTreeSet<Edge<V>>,
+    edges: BTreeSet<Edge>,
     k: usize,
     distance: D,
-    mean: M
+    weighted: bool
 }
 
-impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T> SOCluster<T,V,D,M>{
-    pub fn new(centroids: Vec<T>, edges: BTreeSet<Edge<V>>, k: usize, distance: D, mean: M) -> SOCluster<T,V,D,M>{
+impl<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster<T,V,D>{
+    pub fn new(centroids: Vec<T>, edges: BTreeSet<Edge>, k: usize, distance: D, weighted: bool) -> SOCluster<T,V,D>{
         SOCluster{
             centroids,
             counts: (0..k).map(|_| 1).collect(),
             edges,
             k,
             distance,
-            mean
+            weighted
         }
     }
 
-    pub fn new_untrained(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
-        socluster_setup(k, data, distance, mean)
+    pub fn new_untrained(k: usize, data: &[T], distance: D) -> SOCluster<T,V,D>{
+        socluster_setup(k, data, distance, true)
     }
 
-    pub fn new_trained(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
-        let mut soc = socluster_setup(k, data, distance, mean);
+    pub fn new_trained(k: usize, data: &[T], distance: D) -> SOCluster<T,V,D>{
+        let mut soc = socluster_setup(k, data, distance, true);
         soc.train_all(data);
         soc
     }
 
-    pub fn new_trained_plus(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M>{
+    pub fn new_trained_unweighted(k: usize, data: &[T], distance: D) -> SOCluster<T,V,D>{
+        let mut soc = socluster_setup(k, data, distance, false);
+        soc.train_all(data);
+        soc
+    }
+
+    pub fn new_trained_plus(k: usize, data: &[T], distance: D) -> SOCluster<T,V,D>{
         let centroids = initial_plus_plus(k, &distance, data);
-        let mut soc = socluster_setup(k, &centroids, distance, mean);
+        let mut soc = socluster_setup(k, &centroids, distance, true);
         soc.train_all(data);
         soc
     }
@@ -157,20 +163,23 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
             let max = max(e1, e2);
             let min = min(e1, e2);
             let (n1, n2) = (self.centroids.remove(max), self.centroids.remove(min));
-            //TODO: GET COUNTS
+
             let (c1, c2) = (self.counts.remove(max) as f64, self.counts.remove(min) as f64);
             assert!(c1 > 0.0 && c2 > 0.0);
 
             self.edges.drain_filter(|v| v.contains_index(e1) || v.contains_index(e2));
             self.edges = self.edges.iter().map(|edge | shift_edge(edge, max)).collect();
 
-            //self.insert(min, &n1.calc_mean(&n2));
-            //let mean = Means::calc_means(&vec![n1, n2]);
-            //TODO: TRANSFER COUNTS AND CALCULATE WEIGHTED MEAN
             let sum = c1 + c2;
-            let w1 = c1 / sum;
-            let w2 = c2 / sum;
-            let mean = Means::calc_weighted(&n1, w1, w2, &n2);
+            let mut mean;
+
+            if self.weighted {
+                let w1 = c1 / sum;
+                let w2 = c2 / sum;
+                mean = Means::calc_weighted(&n1, w1, w2, &n2);
+            } else {
+                mean = Means::calc_means(&vec![n1, n2]);
+            }
 
             self.insert(min, &mean, sum as usize);
         }
@@ -178,15 +187,17 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
 
     pub fn insert(&mut self, index: usize, val: &T, count: usize){
         self.centroids.insert(index, val.clone());
-        //TODO: insert correct count
         self.counts.insert(index, count);
+
         for (i, v) in self.centroids.iter().enumerate(){
             if i != index {
                 let dist = (self.distance)(val, v);
-                //TODO: DIFFERENT DISTANCE CALCULATION
-                let max = max(self.counts[index], self.counts[i]) as f64;
-                let weight = dist.into() * max;
-                self.edges.insert(Edge::new(dist, (index, i), weight));
+                let mut weight= dist.into();
+                if self.weighted {
+                    let max = max(self.counts[index], self.counts[i]) as f64;
+                    weight *= max;
+                }
+                self.edges.insert(Edge::new(weight, (index, i)));
             }
         }
     }
@@ -195,23 +206,26 @@ impl<T: Means  , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -
     pub fn insert_last(&mut self, val: &T){
         let last = self.centroids.len();
         self.centroids.push(val.clone());
-        //TODO: PUSH ONE
         self.counts.push(1);
+
         for (i, v) in self.centroids.iter().enumerate(){
             if i != last {
                 let dist = (self.distance)(val, v);
-                //TODO: DIFFERNET DISTANCE CALCULATION
                 assert_eq!(1, self.counts[last]);
-                let max = max(self.counts[last], self.counts[i]) as f64;
-                let weight = dist.into() * max;
-                self.edges.insert(Edge::new(dist, (last, i), weight));
+                let mut weight= dist.into();
+                if self.weighted{
+                    let max = max(self.counts[last], self.counts[i]) as f64;
+                    weight *= max;
+                }
+
+                self.edges.insert(Edge::new(weight, (last, i)));
             }
         }
     }
 
 }
 
-fn shift_edge<V: PartialCmp>(edge: &Edge<V>, max: usize) -> Edge<V> {
+fn shift_edge(edge: &Edge, max: usize) -> Edge {
     let (e1, e2) = edge.indices;
     let mut new_indices = (e1,e2);
     if e1 > max {
@@ -221,29 +235,28 @@ fn shift_edge<V: PartialCmp>(edge: &Edge<V>, max: usize) -> Edge<V> {
         new_indices.1 -= 1;
     }
     Edge{
-        distance: edge.distance.clone(),
-        indices: new_indices,
-        weight: edge.weight.clone()
+        weight: edge.weight.clone(),
+        indices: new_indices
     }
 }
 
 
-fn socluster_setup<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V, M: Fn(&Vec<T>) -> T>
-(k: usize, data: &[T], distance: D, mean: M) -> SOCluster<T,V,D,M> {
+fn socluster_setup<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>
+(k: usize, data: &[T], distance: D, weighted: bool) -> SOCluster<T,V,D> {
     let mut nodes: Vec<T> = Vec::new();
-    let mut vertices: BTreeSet<Edge<V>> = BTreeSet::new();
+    let mut vertices: BTreeSet<Edge> = BTreeSet::new();
     for i in 0..k{
         let img = data[i].clone();
         if !nodes.is_empty() {
             for (ni, v) in nodes.iter().enumerate(){
                 let dist = distance(&img, v);
-                let node = Edge::new(dist, (i, ni),  dist.into());
+                let node = Edge::new(dist.into(), (i, ni));
                 vertices.insert(node);
             }
         }
         nodes.push(img);
     }
-    SOCluster::new(nodes, vertices, k, distance, mean)
+    SOCluster::new(nodes, vertices, k, distance, weighted)
 
 }
 
@@ -309,13 +322,13 @@ mod tests {
     fn test_soc_insert(){
         let data = vec![2, 3, 4, 10, 11, 12, 24, 25, 26, 35, 40, 45];
         let clust = 4;
-        let mut soc = SOCluster::new_untrained(clust, &data, manhattan_32, mean_32);
+        let mut soc = SOCluster::new_untrained(clust, &data, manhattan_32);
         let val1 = 7;
         println!("soc1: {:?}, len: {}, clust: {}", soc.centroids, soc.centroids.len(), clust);
         println!("soc counts: {:?}", soc.counts);
         print!("Edges: [");
         for v in &soc.edges{
-            print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
+            print!(" ({}, [{},{}]) ", v.weight, v.indices.0, v.indices.1);
         }
         print!("]");
         println!();
@@ -325,12 +338,12 @@ mod tests {
 
         print!("Edges after insert: [");
         for v in &soc.edges{
-            print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
+            print!(" ({}, [{},{}]) ", v.weight, v.indices.0, v.indices.1);
         }
         print!("]");
         println!();
         let edge = soc.edges.pop_first().unwrap();
-        let dist = edge.distance;
+        let dist = edge.weight;
         println!("closest: ({}, {}), dist: {}", edge.indices.0, edge.indices.1, dist);
         let (e1, e2) = edge.indices;
         let max = max(e1, e2);
@@ -343,7 +356,7 @@ mod tests {
         soc.edges.drain_filter(|v| v.contains_index(e1) || v.contains_index(e2));
         print!("Edges after drain: [");
         for v in &soc.edges{
-            print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
+            print!(" ({}, [{},{}]) ", v.weight, v.indices.0, v.indices.1);
         }
         print!("]");
         println!();
@@ -351,7 +364,7 @@ mod tests {
         soc.edges = soc.edges.iter().map(|edge| shift_edge(edge, max)).collect();
         print!("Edges after shift: [");
         for v in &soc.edges{
-            print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
+            print!(" ({}, [{},{}]) ", v.weight, v.indices.0, v.indices.1);
         }
         print!("]");
         println!();
@@ -364,7 +377,7 @@ mod tests {
         soc.insert(min, &mean, (c1 + c2) as usize);
         print!("Edges after insert: [");
         for v in &soc.edges{
-            print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
+            print!(" ({}, [{},{}]) ", v.weight, v.indices.0, v.indices.1);
         }
         print!("]");
         println!();
@@ -381,15 +394,15 @@ mod tests {
         println!("Standard Test: ");
         let data = vec![2.0, 3.0, 4.0, 10.0, 11.0, 12.0, 24.0, 25.0, 26.0, 35.0, 40.0, 45.0];
         let clust = 4;
-        let mut soc = SOCluster::new_untrained(clust, &data, manhattan, mean);
+        let mut soc = SOCluster::new_untrained(clust, &data, manhattan);
         println!("centroids: {:?}", soc.centroids);
         soc.train_all(&data);
         println!("centroids after train: {:?}", soc.centroids);
-        let soc2 = SOCluster::new_trained_plus(clust, &data, manhattan, mean);
+        let soc2 = SOCluster::new_trained_plus(clust, &data, manhattan);
         println!("centroids 2 with train: {:?}", soc2.centroids);
         print!("Edges: [");
         for v in &soc2.edges{
-            print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
+            print!(" ({}, [{},{}]) ", v.weight, v.indices.0, v.indices.1);
         }
         print!("]");
         println!();
@@ -402,11 +415,11 @@ mod tests {
         //Adapted From "https://github.com/gjf2a/kmeans"
         let candidate_target_means =
             vec![vec![3, 11, 25, 40], vec![2, 3, 11, 32], vec![7, 25, 35, 42],
-                 vec![7, 25, 37, 45], vec![7, 25, 40, 40], vec![7, 24, 25, 40]];
+                 vec![7, 25, 37, 45], vec![7, 25, 40, 40], vec![7, 24, 25, 40], vec![3, 10, 25, 41]];
         let num_target_means = candidate_target_means[0].len();
         let data = vec![2, 3, 4, 10, 11, 12, 24, 25, 26, 35, 40, 45];
         let socluster =
-            SOCluster::new_trained(num_target_means, &data, manhattan_32, mean_32);
+            SOCluster::new_trained_plus(num_target_means, &data, manhattan_32);
         let mut sorted_means = socluster.copy_clusters();
         sorted_means.sort();
         let unsorted_means = socluster.copy_clusters();
@@ -423,7 +436,7 @@ mod tests {
         }
         print!("Edges: [");
         for v in &socluster.edges{
-            print!(" ({}, [{},{}]) ", v.distance, v.indices.0, v.indices.1);
+            print!(" ({}, [{},{}]) ", v.weight, v.indices.0, v.indices.1);
         }
         print!("]");
         println!();
