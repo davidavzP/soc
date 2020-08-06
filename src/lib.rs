@@ -84,6 +84,39 @@ impl Ord for Edge {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
+pub struct Point<N>{
+    x: N,
+    y: N
+}
+
+impl Point<f64>{
+    pub fn euclidean_distance(&self, other: &Self) -> f64{
+        ((self.x - other.x).powf(2.0) + (self.y - other.y).powf(2.0)).powf(0.5)
+    }
+}
+
+impl Means for Point<f64>{
+    fn calc_mean(&self, other: &Self) -> Self {
+        Point {
+            x: self.x.calc_mean(&other.x),
+            y: self.y.calc_mean(&other.y)
+        }
+    }
+
+    fn calc_means(vals: &Vec<Self>) -> Self {
+        unimplemented!()
+    }
+
+    fn calc_weighted(&self, w1: f64, w2: f64, other: &Self) -> Self {
+        Point{
+            x: self.x.calc_weighted(w1,w2, &other.x),
+            y: self.y.calc_weighted(w1,w2, &other.y)
+        }
+    }
+}
+
+
 
 #[allow(dead_code)]
 pub struct SOCluster<T: Means , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>{
@@ -109,6 +142,10 @@ impl<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster<T,V,D>{
 
     pub fn new_untrained(k: usize, data: &[T], distance: D) -> SOCluster<T,V,D>{
         socluster_setup(k, data, distance, true)
+    }
+
+    pub fn new_untrained_unweighted(k: usize, data: &[T], distance: D) -> SOCluster<T,V,D>{
+        socluster_setup(k, data, distance, false)
     }
 
     pub fn new_trained(k: usize, data: &[T], distance: D) -> SOCluster<T,V,D>{
@@ -191,6 +228,7 @@ impl<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster<T,V,D>{
 
     pub fn insert(&mut self, index: usize, val: &T, count: usize){
         self.centroids.insert(index, val.clone());
+
         self.counts.insert(index, count);
 
         for (i, v) in self.centroids.iter().enumerate(){
@@ -274,7 +312,7 @@ fn classify<T: Means, V: PartialCmp, D: Fn(&T,&T) -> V>(target: &T, means: &Vec<
             Some(if m.0 < d.0 {m} else {d}))).unwrap().1
 }
 
-fn initial_plus_plus<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V>(k: usize, distance: &D, data: &[T]) -> Vec<T> {
+pub fn initial_plus_plus<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V>(k: usize, distance: &D, data: &[T]) -> Vec<T> {
     let mut result = Vec::new();
     let mut rng = thread_rng();
     let range = Uniform::new(0, data.len());
