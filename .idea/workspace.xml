@@ -29,10 +29,22 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
   </component>
-  <component name="RunManager" selected="Cargo Command.Test tests::test_soc">
-    <configuration name="Test tests::f64_u8_test" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+  <component name="RunManager" selected="Cargo Command.Test tests::run_soc2">
+    <configuration name="Test tests::run_soc" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="channel" value="DEFAULT" />
-      <option name="command" value="test --package soc --lib tests::f64_u8_test -- --exact" />
+      <option name="command" value="test --package soc --lib tests::run_soc -- --exact" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="backtrace" value="SHORT" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test tests::run_soc2" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="channel" value="DEFAULT" />
+      <option name="command" value="test --package soc --lib tests::run_soc2 -- --exact" />
       <option name="allFeatures" value="false" />
       <option name="emulateTerminal" value="false" />
       <option name="backtrace" value="SHORT" />
@@ -80,10 +92,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo Command.Test tests::run_soc2" />
+        <item itemvalue="Cargo Command.Test tests::run_soc" />
+        <item itemvalue="Cargo Command.Test tests::test_soc" />
         <item itemvalue="Cargo Command.Test tests::test_soc_print" />
         <item itemvalue="Cargo Command.Test tests::test_soc_insert" />
-        <item itemvalue="Cargo Command.Test tests::test_soc" />
-        <item itemvalue="Cargo Command.Test tests::f64_u8_test" />
       </list>
     </recent_temporary>
   </component>
@@ -110,21 +123,21 @@
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="765" y="256" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1080@0.0.1920.1080" timestamp="1596653789517" />
-    <state width="914" height="292" key="GridCell.Tab.0.bottom" timestamp="1596661644199">
+    <state width="1877" height="298" key="GridCell.Tab.0.bottom" timestamp="1598322807064">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="914" height="292" key="GridCell.Tab.0.bottom/0.0.1920.1080@0.0.1920.1080" timestamp="1596661644199" />
-    <state width="914" height="292" key="GridCell.Tab.0.center" timestamp="1596661644199">
+    <state width="1877" height="298" key="GridCell.Tab.0.bottom/0.0.1920.1080@0.0.1920.1080" timestamp="1598322807064" />
+    <state width="1877" height="298" key="GridCell.Tab.0.center" timestamp="1598322807064">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="914" height="292" key="GridCell.Tab.0.center/0.0.1920.1080@0.0.1920.1080" timestamp="1596661644199" />
-    <state width="914" height="292" key="GridCell.Tab.0.left" timestamp="1596661644199">
+    <state width="1877" height="298" key="GridCell.Tab.0.center/0.0.1920.1080@0.0.1920.1080" timestamp="1598322807064" />
+    <state width="1877" height="298" key="GridCell.Tab.0.left" timestamp="1598322807064">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="914" height="292" key="GridCell.Tab.0.left/0.0.1920.1080@0.0.1920.1080" timestamp="1596661644199" />
-    <state width="914" height="292" key="GridCell.Tab.0.right" timestamp="1596661644199">
+    <state width="1877" height="298" key="GridCell.Tab.0.left/0.0.1920.1080@0.0.1920.1080" timestamp="1598322807064" />
+    <state width="1877" height="298" key="GridCell.Tab.0.right" timestamp="1598322807064">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="914" height="292" key="GridCell.Tab.0.right/0.0.1920.1080@0.0.1920.1080" timestamp="1596661644199" />
+    <state width="1877" height="298" key="GridCell.Tab.0.right/0.0.1920.1080@0.0.1920.1080" timestamp="1598322807064" />
   </component>
 </project>

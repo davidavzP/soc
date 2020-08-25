@@ -12,6 +12,7 @@ use rand::thread_rng;
 use rand::distributions::{Distribution, Uniform, WeightedIndex};
 use std::path::Iter;
 use std::borrow::BorrowMut;
+use std::fmt::{Debug, Display};
 
 
 #[derive(Copy, Clone)]
@@ -116,10 +117,199 @@ impl Means for Point<f64>{
     }
 }
 
+#[allow(dead_code)]
+pub struct SOCluster2<T: Means + Debug , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>{
+    centroids: Vec<T>,
+    counts: Vec<usize>,
+    edges: BTreeSet<Edge>,
+    unused_data: Vec<T>,
+    average_edge: f64,
+    k: usize,
+    distance: D,
+    weighted: bool
+}
 
+impl<T: Means + Debug, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster2<T,V,D> {
+    fn new(centroids: Vec<T>, edges: BTreeSet<Edge>, average_edge: f64, k: usize, distance: D, weighted: bool) -> SOCluster2<T, V, D> {
+        SOCluster2 {
+            centroids,
+            counts: (0..k).map(|_| 1).collect(),
+            edges,
+            unused_data: Vec::new(),
+            average_edge,
+            k,
+            distance,
+            weighted
+        }
+    }
+
+    pub fn new_trained_weighted(k: usize, data: &[T], distance: D) -> SOCluster2<T,V,D>{
+        let centroids = initial_plus_plus(k, &distance, data);
+        let mut soc = socluster_setup2(k, &centroids, distance, true);
+        soc.train_all(data);
+        soc
+
+    }
+
+    pub fn new_trained_unweighted(k: usize, data: &[T], distance: D) -> SOCluster2<T,V,D>{
+        let centroids = initial_plus_plus(k, &distance, data);
+        let mut soc = socluster_setup2(k, &centroids, distance, false);
+        soc.train_all(data);
+        soc
+
+    }
+
+    pub fn move_clusters(self) -> Vec<T>{
+        self.centroids
+    }
+
+    pub fn copy_clusters(&self) -> Vec<T>{
+        self.centroids.clone()
+    }
+
+    pub fn copy_extra_values(&self) -> Vec<T>{
+        self.unused_data.clone()
+    }
+
+    pub fn copy_counts(&self) -> Vec<usize>{
+        self.counts.clone()
+    }
+
+    pub fn train_all(&mut self, data: &[T]){
+        for  v in data{
+            self.train(v);
+        }
+    }
+
+    pub fn train(&mut self, val: &T){
+        if self.centroids.len() == self.k {
+            self.insert_last(val);
+        }
+        if self.centroids.len() > self.k && !self.edges.is_empty(){
+            let edge = self.edges.pop_first().unwrap();
+            let (e1, e2) = edge.indices;
+            assert_ne!(e1, e2);
+            let max = max(e1, e2);
+            let min = min(e1, e2);
+            let (n1, n2) = (self.centroids.remove(max), self.centroids.remove(min));
+
+            let (c1, c2) = (self.counts.remove(max) as f64, self.counts.remove(min) as f64);
+            assert!(c1 > 0.0 && c2 > 0.0);
+
+            self.edges.drain_filter(|v| v.contains_index(e1) || v.contains_index(e2));
+            self.edges = self.edges.iter().map(|edge | shift_edge(edge, max)).collect();
+
+            let sum = c1 + c2;
+            let mut mean;
+
+            if self.weighted {
+                let w1 = c1 / sum;
+                let w2 = c2 / sum;
+                mean = Means::calc_weighted(&n1, w1, w2, &n2);
+            } else {
+                mean = Means::calc_means(&vec![n1, n2]);
+            }
+
+            self.insert(min, &mean, sum as usize);
+        }
+    }
+
+    pub fn insert(&mut self, index: usize, val: &T, count: usize){
+        self.centroids.insert(index, val.clone());
+
+        self.counts.insert(index, count);
+
+        for (i, v) in self.centroids.iter().enumerate(){
+            if i != index {
+                let dist = (self.distance)(val, v);
+                let mut weight= dist.into();
+                if self.weighted {
+                    let max = max(self.counts[index], self.counts[i]) as f64;
+                    weight *= max;
+                }
+                self.edges.insert(Edge::new(weight, (index, i)));
+            }
+        }
+    }
+
+
+    pub fn insert_last(&mut self, val: &T){
+        let last = self.centroids.len();
+        //self.centroids.push(val.clone());
+        //self.counts.push(1);
+
+        let mut temp_edges = self.edges.clone();
+
+        let mut too_far = true;
+        let mut min_dist = std::f64::MAX;
+        let mut min_index= 0;
+
+        for (i, v) in self.centroids.iter().enumerate(){
+                let dist = (self.distance)(val, v);
+
+                let mut weight= dist.into();
+                if self.weighted{
+                    let max = max(1, self.counts[i]) as f64;
+                    weight *= max;
+                }
+
+                if weight <= self.average_edge{
+                    too_far = false;
+                }
+
+                if weight < min_dist{
+                    min_dist = weight;
+                    min_index = i;
+                }
+
+                temp_edges.insert(Edge::new(weight, (last, i)));
+        }
+
+        if too_far{
+            self.unused_data.push(val.clone());
+        }else{
+            self.centroids.push(val.clone());
+            self.counts.push(1);
+            self.edges = temp_edges;
+        }
+    }
+
+
+}
+
+fn socluster_setup2<T: Means + Debug, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>
+(k: usize, data: &[T], distance: D, weighted: bool) -> SOCluster2<T,V,D> {
+    let mut nodes: Vec<T> = Vec::new();
+    let mut vertices: BTreeSet<Edge> = BTreeSet::new();
+    let mut dist_sum = 0.0;
+    let mut totalnum_dist = 0.0;
+    for i in 0..k{
+        let img = data[i].clone();
+        if !nodes.is_empty() {
+            for (ni, v) in nodes.iter().enumerate(){
+                let dist = distance(&img, &v);
+
+                totalnum_dist += 1.0;
+                dist_sum += dist.into();
+
+                let node = Edge::new(dist.into(), (i, ni));
+                vertices.insert(node);
+            }
+        }
+        nodes.push(img);
+    }
+    let average_dist = dist_sum / totalnum_dist;
+    println!("average dist: {}", average_dist);
+    SOCluster2::new(nodes, vertices, average_dist, k, distance, weighted)
+
+}
+
+//**************************************************************************************************
+//ORIGINAL CLUSTERING
+//**************************************************************************************************
 
 #[allow(dead_code)]
-pub struct SOCluster<T: Means , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>{
+pub struct SOCluster<T: Means + Debug , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>{
     centroids: Vec<T>,
     counts: Vec<usize>,
     edges: BTreeSet<Edge>,
@@ -128,7 +318,7 @@ pub struct SOCluster<T: Means , V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>{
     weighted: bool
 }
 
-impl<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster<T,V,D>{
+impl<T: Means + Debug, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster<T,V,D>{
     fn new(centroids: Vec<T>, edges: BTreeSet<Edge>, k: usize, distance: D, weighted: bool) -> SOCluster<T,V,D>{
         SOCluster{
             centroids,
@@ -188,7 +378,7 @@ impl<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster<T,V,D>{
     }
 
     pub fn train_all(&mut self, data: &[T]){
-        for v in data{
+        for  v in data{
             self.train(v);
         }
     }
@@ -283,7 +473,7 @@ fn shift_edge(edge: &Edge, max: usize) -> Edge {
 }
 
 
-fn socluster_setup<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>
+fn socluster_setup<T: Means + Debug, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>
 (k: usize, data: &[T], distance: D, weighted: bool) -> SOCluster<T,V,D> {
     let mut nodes: Vec<T> = Vec::new();
     let mut vertices: BTreeSet<Edge> = BTreeSet::new();
@@ -302,8 +492,10 @@ fn socluster_setup<T: Means, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V>
 
 }
 
+
+
 #[cfg(test)]
-fn classify<T: Means, V: PartialCmp, D: Fn(&T,&T) -> V>(target: &T, means: &Vec<T>, distance: &D) -> usize {
+fn classify<T: Means + Debug, V: PartialCmp, D: Fn(&T,&T) -> V>(target: &T, means: &Vec<T>, distance: &D) -> usize {
     let distances: Vec<(V,usize)> = (0..means.len())
         .map(|i| (distance(&target, &means[i]).into(), i))
         .collect();
@@ -312,7 +504,7 @@ fn classify<T: Means, V: PartialCmp, D: Fn(&T,&T) -> V>(target: &T, means: &Vec<
             Some(if m.0 < d.0 {m} else {d}))).unwrap().1
 }
 
-pub fn initial_plus_plus<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V>(k: usize, distance: &D, data: &[T]) -> Vec<T> {
+pub fn initial_plus_plus<T: Clone + PartialEq + Debug, V: Copy + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V>(k: usize, distance: &D, data: &[T]) -> Vec<T> {
     let mut result = Vec::new();
     let mut rng = thread_rng();
     let range = Uniform::new(0, data.len());
@@ -331,7 +523,7 @@ pub fn initial_plus_plus<T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd 
 
 #[cfg(test)]
 mod tests {
-    use crate::{SOCluster, shift_edge, initial_plus_plus};
+    use crate::{SOCluster, shift_edge, initial_plus_plus, SOCluster2};
     use std::cmp::{max, min};
     use crate::means::traits::Means;
 
@@ -449,6 +641,17 @@ mod tests {
         print!("]");
         println!();
         println!("soc counts: {:?}", soc2.counts);
+    }
+
+    #[test]
+    fn run_soc2(){
+        let data = vec![2.0, 3.0, 4.0, 10.0, 11.0, 12.0, 24.0, 25.0, 26.0, 35.0, 40.0, 45.0, 100.0];
+        let clust = 4;
+        let socluster =
+            SOCluster2::new_trained_weighted(clust, &data, manhattan);
+        let centroids = socluster.copy_clusters();
+        let unused = socluster.copy_extra_values();
+        println!("centroids: {:?}, unused: {:?}", centroids, unused);
     }
 
     #[test]
