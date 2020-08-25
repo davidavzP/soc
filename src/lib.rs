@@ -230,6 +230,8 @@ impl<T: Means + Debug, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster2
                 self.edges.insert(Edge::new(weight, (index, i)));
             }
         }
+
+        self.average_edge = self.edges.iter().fold(0.0, |sum, edge | sum + edge.weight ) / self.edges.len() as f64;
     }
 
 
@@ -271,6 +273,7 @@ impl<T: Means + Debug, V: PartialCmp + Into<f64>, D: Fn(&T, &T) -> V> SOCluster2
             self.centroids.push(val.clone());
             self.counts.push(1);
             self.edges = temp_edges;
+            self.average_edge = self.edges.iter().fold(0.0, |sum, edge | sum + edge.weight ) / self.edges.len() as f64;
         }
     }
 
