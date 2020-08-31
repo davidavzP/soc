@@ -251,7 +251,7 @@ pub mod alts {
                 self.filter_val(val);
                 if self.filtered.len() >= self.k && !self.f_edges.is_empty() {
                     let val = self.f_edges.first().unwrap();
-                    let min_centroid = self.edges.first().unwrap();
+                    let min_centroid = self.edges.last().unwrap();
                     if val.weight <= min_centroid.weight {
                         self.train_from_filtered();
                     }
