@@ -5,7 +5,7 @@
 #![feature(trait_alias)]
 
 pub mod means;
-mod soc_alternates;
+pub mod soc_alternates;
 
 use std::collections::*;
 use std::cmp::{Ordering, min, max};
