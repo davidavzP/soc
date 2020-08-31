@@ -1,10 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9ccc7b91-a572-4f2c-8e0c-a9ba88bc762e" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/soc_alternates.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
     </list>
@@ -12,6 +31,13 @@
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Rust File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -29,7 +55,31 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
   </component>
-  <component name="RunManager" selected="Cargo Command.Test tests::run_soc2">
+  <component name="RunManager" selected="Cargo Command.Test soc_alternates::tests::test_socf">
+    <configuration name="Test soc_alternates::tests::test_soc2" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="channel" value="DEFAULT" />
+      <option name="command" value="test --package soc --lib soc_alternates::tests::test_soc2 -- --exact" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="backtrace" value="SHORT" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test soc_alternates::tests::test_socf" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="channel" value="DEFAULT" />
+      <option name="command" value="test --package soc --lib soc_alternates::tests::test_socf -- --exact" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="backtrace" value="SHORT" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Test tests::run_soc" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="channel" value="DEFAULT" />
       <option name="command" value="test --package soc --lib tests::run_soc -- --exact" />
@@ -66,37 +116,13 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test tests::test_soc_insert" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="channel" value="DEFAULT" />
-      <option name="command" value="test --package soc --lib tests::test_soc_insert -- --exact" />
-      <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
-      <option name="backtrace" value="SHORT" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test tests::test_soc_print" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="channel" value="DEFAULT" />
-      <option name="command" value="test --package soc --lib tests::test_soc_print -- --exact" />
-      <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
-      <option name="backtrace" value="SHORT" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo Command.Test soc_alternates::tests::test_socf" />
+        <item itemvalue="Cargo Command.Test soc_alternates::tests::test_soc2" />
         <item itemvalue="Cargo Command.Test tests::run_soc2" />
         <item itemvalue="Cargo Command.Test tests::run_soc" />
         <item itemvalue="Cargo Command.Test tests::test_soc" />
-        <item itemvalue="Cargo Command.Test tests::test_soc_print" />
-        <item itemvalue="Cargo Command.Test tests::test_soc_insert" />
       </list>
     </recent_temporary>
   </component>
@@ -118,26 +144,41 @@
     </task>
     <servers />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="WindowStateProjectService">
     <state x="765" y="256" key="#com.intellij.ide.util.MemberChooser" timestamp="1596653789517">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="765" y="256" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1080@0.0.1920.1080" timestamp="1596653789517" />
-    <state width="1877" height="298" key="GridCell.Tab.0.bottom" timestamp="1598322807064">
-      <screen x="0" y="0" width="1920" height="1080" />
+    <state width="1037" height="306" key="GridCell.Tab.0.bottom" timestamp="1598833386041">
+      <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1877" height="298" key="GridCell.Tab.0.bottom/0.0.1920.1080@0.0.1920.1080" timestamp="1598322807064" />
-    <state width="1877" height="298" key="GridCell.Tab.0.center" timestamp="1598322807064">
-      <screen x="0" y="0" width="1920" height="1080" />
+    <state width="1037" height="306" key="GridCell.Tab.0.bottom/0.0.1080.1920@0.0.1080.1920" timestamp="1598833386041" />
+    <state width="1877" height="298" key="GridCell.Tab.0.bottom/0.0.1920.1080@0.0.1920.1080" timestamp="1598831663610" />
+    <state width="1037" height="306" key="GridCell.Tab.0.center" timestamp="1598833386041">
+      <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1877" height="298" key="GridCell.Tab.0.center/0.0.1920.1080@0.0.1920.1080" timestamp="1598322807064" />
-    <state width="1877" height="298" key="GridCell.Tab.0.left" timestamp="1598322807064">
-      <screen x="0" y="0" width="1920" height="1080" />
+    <state width="1037" height="306" key="GridCell.Tab.0.center/0.0.1080.1920@0.0.1080.1920" timestamp="1598833386041" />
+    <state width="1877" height="298" key="GridCell.Tab.0.center/0.0.1920.1080@0.0.1920.1080" timestamp="1598831663610" />
+    <state width="1037" height="306" key="GridCell.Tab.0.left" timestamp="1598833386041">
+      <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1877" height="298" key="GridCell.Tab.0.left/0.0.1920.1080@0.0.1920.1080" timestamp="1598322807064" />
-    <state width="1877" height="298" key="GridCell.Tab.0.right" timestamp="1598322807064">
-      <screen x="0" y="0" width="1920" height="1080" />
+    <state width="1037" height="306" key="GridCell.Tab.0.left/0.0.1080.1920@0.0.1080.1920" timestamp="1598833386041" />
+    <state width="1877" height="298" key="GridCell.Tab.0.left/0.0.1920.1080@0.0.1920.1080" timestamp="1598831663609" />
+    <state width="1037" height="306" key="GridCell.Tab.0.right" timestamp="1598833386041">
+      <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1877" height="298" key="GridCell.Tab.0.right/0.0.1920.1080@0.0.1920.1080" timestamp="1598322807064" />
+    <state width="1037" height="306" key="GridCell.Tab.0.right/0.0.1080.1920@0.0.1080.1920" timestamp="1598833386041" />
+    <state width="1877" height="298" key="GridCell.Tab.0.right/0.0.1920.1080@0.0.1920.1080" timestamp="1598831663610" />
   </component>
 </project>
