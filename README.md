@@ -6,10 +6,10 @@ Apdated from 2016 MAICS paper "Real-time Unsupervised Clustering" by Dr. Gabriel
 We presented this work on September 24, and I created this helpful visualization of how the SOC centers its clusters. 
 
 The algorithm:
-  -Take k data samples for initial centroids
-	-For each remaining data sample n
-		-Find the distance between n and each k centroids
-		-Average the closest centroid with n and replace centroid with this averaged sample
+-Take k data samples for initial centroids
+ -For each remaining data sample n
+  -Find the distance between n and each k centroids
+  -Average the closest centroid with n and replace centroid with this averaged sample
 	
 The GREEN dots are the original data points.
 The BLUE dots represent the centroids from Kmeans.
